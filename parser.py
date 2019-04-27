@@ -1,5 +1,6 @@
 import requests
 import csv
+import os
 from bs4 import BeautifulSoup as bs
 
 
@@ -24,13 +25,11 @@ def hh_parse(base_url, headers):
             for i in range(1, pages_count):
                 url = base_url + f'&page={i}'
                 urls.append(url)
-            for url in urls:
-                print(url)
         except:
             pass
 
-    for url in urls:
-        request = session.get(url, headers=headers)
+    for i in range(len(urls)):
+        request = session.get(urls[i], headers=headers)
         if request.status_code == 200:
             soup = bs(request.content, 'lxml')
             divs = soup.find_all('div', attrs={'data-qa': 'vacancy-serp__vacancy'})
@@ -51,18 +50,21 @@ def hh_parse(base_url, headers):
                              'href': href})
         else:
             print(request.status_code)
+        print('Парсинг страницы: ' + str(int(i / len(urls) * 100)) + '%')
     return jobs
 
 
-def save_jobs_to_csv(jobs):
-    with open('parsed_jobs_2.csv', 'w', encoding='utf8') as file:
+def save_jobs_to_csv(jobs, path):
+    print("Сохранение файла...")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w', encoding='utf8') as file:
         pen = csv.writer(file)
         pen.writerow(('Вакансия', 'Компания', 'Обязанности', 'Требования', 'Зар. плата', 'URL'))
         for job in jobs:
             pen.writerow((job['title'], job['company'], job['responsibility'],
                           job['requirement'], job['salary'], job['href']))
-    print('File saved successfully!')
+    print('Файл успешно сохранен!')
 
 
 jobs = hh_parse(base_url, headers)
-save_jobs_to_csv(jobs)
+save_jobs_to_csv(jobs, 'csv/test_csv.csv')
